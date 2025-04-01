@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generating Interactive Chart</title>
+    <link href="{{ url_for('static', filename='styl.css') }}" rel="stylesheet">
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/series-label.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+    <center>
+        <form id="plot-form">
+
+            <select id="cases-select" multiple="multiple" name="cases" style="width: 50%">
+                <!-- Options will be dynamically added by JavaScript -->
+            </select>
+            <br><br>
+            <button type="button" id="dark-mode-toggle">Toggle Dark Mode</button>
+            <br><br>
+        </form>
+    </center>
+
+    <div id="chart-container-1" style="width:100%; height:400px;"></div>
+    <div id="chart-container-2" style="width:100%; height:400px;"></div>
+
+</div>
+<script>
+    let darkMode = false;
+
+ // Funkcja ustawiająca opcje globalne Highcharts z poprawionymi ustawieniami widoczności
+const setHighchartsOptions = () => {
+    Highcharts.setOptions({
+        colors: ['#2b908f', '#90ee7e', '#f45b5b', '#7798BF', '#aaeeee', '#ff0066', '#eeaaee',
+            '#55BF3B', '#DF5353', '#7798BF', '#aaeeee'],
+        chart: {
+            backgroundColor: darkMode ? '#262f36' : '#FFFFFF',
+            style: {
+                fontFamily: '\'Unica One\', sans-serif',
+                fontSize: '16px'
+            },
+            plotBorderColor: darkMode ? '#606063' : '#CCCCCC',
+            shadow: true  // Dodanie delikatnego cienia dla lepszej głębi
+        },
+        title: {
+            style: {
+                color: darkMode ? '#E0E0E3' : '#000000',
+                textTransform: 'uppercase',
+                fontSize: '24px'  // Większy rozmiar czcionki
+            }
+        },
+        subtitle: {
+            style: {
+                color: darkMode ? '#E0E0E3' : '#000000',
+                textTransform: 'uppercase',
+                fontSize: '18px'
+            }
+        },
+        xAxis: {
+            gridLineColor: darkMode ? '#707073' : '#E6E6E6',
+            gridLineWidth: 1.5,
+            labels: {
+                style: {
+                    color: darkMode ? '#E0E0E3' : '#000000',
+                    fontSize: '14px'
+                }
+            },
+            lineColor: darkMode ? '#707073' : '#E6E6E6',
+            minorGridLineColor: darkMode ? '#505053' : '#F0F0F0',
+            tickColor: darkMode ? '#707073' : '#E6E6E6',
+            title: {
+                style: {
+                    color: darkMode ? '#A0A0A3' : '#000000',
+                    fontSize: '16px'
+                }
+            }
+        },
+        yAxis: {
+            gridLineColor: darkMode ? '#707073' : '#E6E6E6',
+            gridLineWidth: 1.5,
+            labels: {
+                style: {
+                    color: darkMode ? '#E0E0E3' : '#000000',
+                    fontSize: '14px'
+                }
+            },
+            lineColor: darkMode ? '#707073' : '#E6E6E6',
+            minorGridLineColor: darkMode ? '#505053' : '#F0F0F0',
+            tickColor: darkMode ? '#707073' : '#E6E6E6',
+            tickWidth: 1,
+            title: {
+                style: {
+                    color: darkMode ? '#A0A0A3' : '#000000',
+                    fontSize: '16px'
+                }
+            }
+        },
+        tooltip: {
+    backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.77)' : 'rgba(255, 255, 255, 0.77)',
+    style: {
+         fontSize: '16px',
+         width: '250px',       // ustalona szerokość
+         whiteSpace: 'nowrap '  // umożliwia zawijanie tekstu
+    },
+        },
+        plotOptions: {
+            series: {
+                dataLabels: {
+                    color: darkMode ? '#F0F0F3' : '#000000',
+                    style: {
+                        fontSize: '14px'
+                    }
+                },
+                marker: {
+                    lineColor: darkMode ? '#333' : '#FFFFFF',
+                    radius: 6, // Większe markery
+                    lineWidth: 2
+                },
+                shadow: {
+                    color: 'rgba(0, 0, 0, 0.3)',
+                    width: 5,
+                    offsetX: 3,
+                    offsetY: 3
+                }
+            },
+            boxplot: {
+                fillColor: darkMode ? '#505053' : '#FFFFFF'
+            },
+            candlestick: {
+                lineColor: darkMode ? 'white' : '#000000'
+            },
+            errorbar: {
+                color: darkMode ? 'white' : '#000000'
+            }
+        },
+        legend: {
+            backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+            itemStyle: {
+                color: darkMode ? '#E0E0E3' : '#000000',
+                fontSize: '14px'
+            },
+            itemHoverStyle: {
+                color: darkMode ? '#FFF' : '#000000'
+            },
+            itemHiddenStyle: {
+                color: darkMode ? '#606063' : '#E0E0E3'
+            },
+            title: {
+                style: {
+                    color: darkMode ? '#C0C0C0' : '#000000',
+                    fontSize: '16px'
+                }
+            }
+        },
+        credits: {
+            style: {
+                color: darkMode ? '#666' : '#999999'
+            }
+        },
+        labels: {
+            style: {
+                color: darkMode ? '#707073' : '#000000'
+            }
+        },
+        drilldown: {
+            activeAxisLabelStyle: {
+                color: darkMode ? '#F0F0F3' : '#000000'
+            },
+            activeDataLabelStyle: {
+                color: darkMode ? '#F0F0F3' : '#000000'
+            }
+        },
+        navigation: {
+            buttonOptions: {
+                symbolStroke: darkMode ? '#DDDDDD' : '#000000',
+                theme: {
+                    fill: darkMode ? '#505053' : '#FFFFFF'
+                }
+            }
+        },
+        rangeSelector: {
+            buttonTheme: {
+                fill: darkMode ? '#505053' : '#FFFFFF',
+                stroke: darkMode ? '#000000' : '#E6E6E6',
+                style: {
+                    color: darkMode ? '#CCC' : '#000000'
+                },
+                states: {
+                    hover: {
+                        fill: darkMode ? '#707073' : '#F0F0F0',
+                        stroke: darkMode ? '#000000' : '#E6E6E6',
+                        style: {
+                            color: darkMode ? 'white' : 'black'
+                        }
+                    },
+                    select: {
+                        fill: darkMode ? '#000003' : '#FFFFFF',
+                        stroke: darkMode ? '#000000' : '#E6E6E6',
+                        style: {
+                            color: darkMode ? 'white' : 'black'
+                        }
+                    }
+                }
+            },
+            inputBoxBorderColor: darkMode ? '#505053' : '#CCCCCC',
+            inputStyle: {
+                backgroundColor: darkMode ? '#333' : '#FFFFFF',
+                color: darkMode ? 'silver' : '#000000'
+            },
+            labelStyle: {
+                color: darkMode ? 'silver' : '#000000'
+            }
+        },
+        navigator: {
+            handles: {
+                backgroundColor: darkMode ? '#666' : '#E6E6E6',
+                borderColor: darkMode ? '#AAA' : '#999999'
+            },
+            outlineColor: darkMode ? '#CCC' : '#000000',
+            maskFill: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+            series: {
+                color: darkMode ? '#7798BF' : '#A6C7ED',
+                lineColor: darkMode ? '#A6C7ED' : '#7798BF'
+            },
+            xAxis: {
+                gridLineColor: darkMode ? '#505053' : '#E6E6E6'
+            }
+        },
+        scrollbar: {
+            barBackgroundColor: darkMode ? '#808083' : '#CCCCCC',
+            barBorderColor: darkMode ? '#808083' : '#999999',
+            buttonArrowColor: darkMode ? '#CCC' : '#000000',
+            buttonBackgroundColor: darkMode ? '#606063' : '#E6E6E6',
+            buttonBorderColor: darkMode ? '#606063' : '#999999',
+            rifleColor: darkMode ? '#FFF' : '#000000',
+            trackBackgroundColor: darkMode ? '#404043' : '#F0F0F0',
+            trackBorderColor: darkMode ? '#404043' : '#E6E6E6'
+        }
+    });
+}
+        const eventsData = [
+            // Add a plot line for each flag event
+            {
+                color: 'red', // Color of the line
+                width: 1.5, // Width of the line
+                value: Date.UTC(20212, 8, 21), // Position on the x-axis
+                label: {
+                    text: 'Steam Release',
+                    verticalAlign: 'bottom',
+                    textAlign: 'right',
+                    y: 0
+                }
+            },
+            {
+                color: 'green',
+                width: 2,
+                value: Date.UTC(2013, 4, 25),
+                label: {
+                    text: 'Op. Payback',
+                    verticalAlign: 'bottom',
+                    textAlign: 'right',
+                    y: 0
+                }
+            },
+            {
+                color: 'red',
+                width: 2,
+                value: Date.UTC(2013, 8, 19),
+                label: {
+                    text: 'Op Bravo',
+                    verticalAlign: 'bottom',
+                    textAlign: 'right',
+                    y: 0
+                }
+            },
+                        {
+                color: 'blue',
+                width: 2,
+                value: Date.UTC(2014, 6, 11),
+                label: {
+                    text: 'Op. Phoenix',
+                    verticalAlign: 'bottom',
+                    textAlign: 'right',
+                    y: 0
+                }
+            },
+                                    {
+                color: 'blue',
+                width: 2,
+                value: Date.UTC(2014, 7, 1),
+                label: {
+                    text: 'Op. Breakout',
+                    verticalAlign: 'bottom',
+                    textAlign: 'right',
+                    y: 0
+                }
+            },
+                                    {
+                color: 'blue',
+                width: 2,
+                value: Date.UTC(2014, 11, 11),
+                label: {
+                    text: 'Op. Vanguard',
+                    verticalAlign: 'bottom',
+                    textAlign: 'right',
+                    y: 0
+                }
+            },
+                                    {
+                color: 'blue',
+                width: 2,
+                value: Date.UTC(2015, 5, 26),
+                label: {
+                    text: 'Op. Bloodhound',
+                    verticalAlign: 'bottom',
+                    textAlign: 'right',
+                    y: 0
+                }
+            },
+                                    {
+                color: 'blue',
+                width: 2,
+                value: Date.UTC(2016, 2, 17),
+                label: {
+                    text: 'Op. Wildfire',
+                    verticalAlign: 'bottom',
+                    textAlign: 'right',
+                    y: 0
+                }
+            },
+                                    {
+                color: 'blue',
+                width: 2,
+                value: Date.UTC(2017, 5, 23),
+                label: {
+                    text: 'Op. Hydra',
+                    verticalAlign: 'bottom',
+                    textAlign: 'right',
+                    y: 0
+                }
+            },
+                                    {
+                color: 'blue',
+                width: 2,
+                value: Date.UTC(2018, 12, 6),
+                label: {
+                    text: 'Danger Zone & Free to Play',
+                    verticalAlign: 'bottom',
+                    textAlign: 'right',
+                    y: 0
+                }
+            },
+                                     {
+                color: 'blue',
+                width: 2,
+                value: Date.UTC(2020, 12, 3),
+                label: {
+                    text: 'Op. Broken Fang',
+                    verticalAlign: 'bottom',
+                    textAlign: 'right',
+                    y: 0
+                }
+            },
+                                     {
+                color: 'red',
+                width: 2,
+                value: Date.UTC(2019, 10, 18),
+                label: {
+                    text: 'Op. Shattered Web',
+                    verticalAlign: 'bottom',
+                    textAlign: 'right',
+                    y: 0
+                }
+            },
+                                     {
+                color: 'red',
+                width: 2,
+                value: Date.UTC(2021, 9, 22),
+                label: {
+                    text: 'Op. Riptide',
+                    verticalAlign: 'bottom',
+                    textAlign: 'right',
+                    y: 0
+                }
+            },
+                                     {
+                color: 'red',
+                width: 2,
+                value: Date.UTC(2023, 3, 22),
+                label: {
+                    text: 'CS2 Limited Test',
+                    verticalAlign: 'bottom',
+                    textAlign: 'right',
+                    y: 0
+                }
+            },
+                                               {
+                color: 'red',
+                width: 2,
+                value: Date.UTC(2023, 9, 27),
+                label: {
+                    text: 'CS2 Full Release',
+                    verticalAlign: 'bottom',
+                    textAlign: 'right',
+                    y: 0
+                }
+            },
+
+        ]
+$(document).ready(function() {
+    setHighchartsOptions();
+
+    $.ajax({
+        url: '/list_json_files',
+        method: 'GET',
+        success: function(data) {
+            if (data.length > 0) {
+                var cases = data.map(function(filename) {
+                    return filename;
+                });
+
+                $('#cases-select').select2({
+                    data: cases,
+                    placeholder: 'Select cases to display',
+                    allowClear: true,
+                    closeOnSelect: false
+                });
+
+                if (cases.length > 0) {
+                    generatePlot(5000, [cases[0]], 'chart-container-1');
+                    generateStockPlot(5000, [cases[0]], 'chart-container-2');
+                }
+            }
+        },
+        error: function(error) {
+            console.error('Error fetching cases:', error);
+        }
+    });
+
+    $('#cases-select').on('change', function() {
+        var selectedCases = $(this).val();
+        generatePlot(5000, selectedCases, 'chart-container-1');
+        generateStockPlot(5000, selectedCases, 'chart-container-2');
+    });
+
+    $('#plot-form').on('submit', function(e) {
+        e.preventDefault();
+        var selectedCases = $('#cases-select').val();
+        generatePlot(5000, selectedCases, 'chart-container-1');
+        generateStockPlot(5000, selectedCases, 'chart-container-2');
+    });
+
+    $('#dark-mode-toggle').on('click', function() {
+        darkMode = !darkMode;
+        setHighchartsOptions();
+        generatePlot(5000, $('#cases-select').val(), 'chart-container-1');
+        generateStockPlot(5000, $('#cases-select').val(), 'chart-container-2');
+    });
+});
+
+function generatePlot(numDays, selectedCases, container) {
+    fetch('/generate_plot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ market_hash_names: selectedCases, num_days: numDays })
+    })
+    .then(response => response.json())
+    .then(data => {
+        let initialValue = {};
+        function updateInitialValues(chart) {
+            chart.series.forEach(series => {
+                if (series.data.length > 0) {
+                    initialValue[series.name] = series.data[0].y;
+                }
+            });
+        }
+        var chart = Highcharts.chart(container, {
+            chart: {
+                type: 'line',
+                zoomType: 'xy',
+                panning: true,
+                panKey: 'shift',
+                events: {
+                    load: function() {
+                        updateInitialValues(this);
+                    },
+                    selection: function(event) {
+                        if (event.resetSelection) {
+                            updateInitialValues(this);
+                        } else {
+                            let min = event.xAxis[0].min;
+                            this.series.forEach(series => {
+                                let point = series.data.find(point => point.x >= min);
+                                if (point) {
+                                    initialValue[series.name] = point.y;
+                                }
+                            });
+                        }
+                    }
+                }
+            },
+            tooltip: {
+                useHTML: true,
+                backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.77)' : 'rgba(255, 255, 255, 0.77)',
+                formatter: function () {
+                    var s = '<b style="font-size: 10px;">Day ' + (this.x + 1) + '</b>';
+                    if (this.points) {
+                        this.points.forEach(function (point) {
+                            let seriesIniValue = initialValue[point.series.name];
+                            point.change = -((seriesIniValue - point.y) / seriesIniValue * 100).toFixed(2);
+                            let color = point.change >= 0 ? 'green' : 'red';
+                            s += '<br/><span style="color:' + point.series.color + '">● </span>'
+                                + '<span style="font-size: 16px;">'
+                                + '$' + point.y.toFixed(2) + ' '
+                                + ' (<span style="color:' + color + ';">' + point.change + '%</span>) '
+                                + Highcharts.dateFormat('%Y-%m-%d', new Date(point.point.t)) + '</span>';
+                        });
+                    }
+                    return s;
+                },
+                valueDecimals: 2,
+                split: true
+            },
+            plotOptions: {
+                series: {
+                    findNearestPointBy: 'x',
+                    turboThreshold: 5000
+                }
+            },
+            title: {
+                text: 'Dynamic Data Comparison'
+            },
+            xAxis: {
+                type: 'linear',
+                title: { text: 'Day Number' }
+            },
+            yAxis: {
+                type: 'logarithmic',
+                labels: {
+                    format: '${value}'
+                }
+            },
+            legend: {
+                enabled: true,
+                layout: 'horizontal',
+                align: 'center',
+                verticalAlign: 'top',
+                borderWidth: 1
+            },
+            exporting: {
+                enabled: true
+            },
+            series: data.prices,
+        });
+        $(".highcharts-button-symbol").parent().after('<button id="lifetimeResetBtn" style="position: relative; left: 10px; top: 3px; z-index: 3;">Lifetime</button>');
+        $('#lifetimeResetBtn').on('click', function () {
+            chart.zoomOut();
+        });
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function generateStockPlot(numDays, selectedCases, container) {
+    fetch('/generate_plot', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({market_hash_names: selectedCases, num_days: numDays})
+    })
+    .then(response => response.json())
+    .then(data => {
+        let initialValue = {};
+        data.prices.forEach(series => {
+            initialValue[series.name] = series.data[0].y;
+        });
+        var chart = Highcharts.stockChart(container, {
+            chart: {
+                type: 'line',
+                zoomType: 'xy',
+                panning: true,
+                panKey: 'shift'
+            },
+            tooltip: {
+                split: true,
+                useHTML: true,
+                backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.77)' : 'rgba(255, 255, 255, 0.77)',
+                formatter: function () {
+                    var s = '<b style="font-size: 10px;">' + Highcharts.dateFormat('%Y-%m-%d', new Date(this.x)) + '</b>';
+                    if (this.points) {
+                        this.points.forEach(function (point) {
+                            let seriesIniValue = initialValue[point.series.name];
+                            point.change = -((seriesIniValue - point.y) / seriesIniValue * 100).toFixed(2);
+                            let color = point.change >= 0 ? '#00FF00' : 'red';
+                            s += '<br/><span style="color:' + point.series.color + '">● </span>'
+                                + '<span style="font-size: 16px;">'
+                                + '$' + point.y.toFixed(2) + ' '
+                                + ' (<span style="color:' + color + ';">' + point.change + '%</span>) '
+                                + Highcharts.dateFormat('%Y-%m-%d', new Date(point.point.t)) + '</span>';
+                        });
+                    }
+                    return s;
+                },
+                valueDecimals: 2,
+            },
+            xAxis: {
+                type: 'datetime',
+                title: {text: 'Date'},
+                plotLines: eventsData,
+                events: {
+                    afterSetExtremes: function (e) {
+                        if (e.min < 0) {
+                            e.min = 0;
+                        }
+                        chart.series.forEach(function (series) {
+                            if (series.data.length > 0) {
+                                let unixTime = Math.ceil(e.min);
+                                if (unixTime < 0) unixTime = 0;
+                                var point = series.points.find(point => point.t === unixTime);
+                                for (let i = 0; i < series.points.length; i++){
+                                    var d1 = Highcharts.dateFormat('%Y-%m-%d', new Date(unixTime));
+                                    var d2 = Highcharts.dateFormat('%Y-%m-%d', new Date(series.points[i].x));
+                                    if(d1 === d2){
+                                        initialValue[series.name] = series.points[i+1].y;
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            },
+            yAxis: {
+                opposite: false,
+                type: 'logarithmic',
+                labels: {
+                    format: '${value}'
+                }
+            },
+            legend: {
+                enabled: true,
+                layout: 'horizontal',
+                align: 'center',
+                verticalAlign: 'top',
+                borderWidth: 1
+            },
+            exporting: {
+                enabled: true
+            },
+            rangeSelector: {
+                enabled: false
+            },
+            series: data.prices.map(series => ({
+                name: series.name,
+                data: series.data.map(point => [point.t, point.y])
+            }))
+        });
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
+</body>
+</html>
